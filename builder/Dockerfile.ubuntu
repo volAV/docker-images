@@ -25,16 +25,16 @@ RUN apt-get --yes install \
 # --------------
 # Dependencies
 RUN apt-get --yes install \
-	zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev \
-	libreadline-dev libffi-dev libsqlite3-dev libbz2-dev
+	libreadline-dev libssl-dev libbz2-dev libffi-dev libgdbm-dev liblzma-dev libncurses5-dev libnss3-dev libsqlite3-dev \
+	zlib1g-dev
 
 # Compiling
-ARG PYTHON=3.12.1
+ARG PYTHON=3.13.1
 RUN curl -sSL https://www.python.org/ftp/python/$PYTHON/Python-$PYTHON.tgz \
 	| tar -xzvf - \
 	&& cd Python-$PYTHON \
-	&& ./configure --enable-optimizations \
-	&& make -j $(nproc) \
+	&& ./configure --enable-optimizations --with-lto --enable-shared CFLAGS="-fno-semantic-interposition -fno-plt" \
+	&& make -j$(nproc) \
 	&& make altinstall \
 	&& rm -rf ~/Python-$PYTHON
 
@@ -61,9 +61,10 @@ RUN case $REL in \
 USER $USER_NAME
 WORKDIR	/home/$USER_NAME/target
 
-# Install Poetry
-# --------------
-RUN	curl -sSL https://install.python-poetry.org | python3 -
 
+# Install UV
+# ----------
+ARG UV=0.5.20
+RUN curl -LsSl https://astral.sh/uv/$UV/install.sh | sh
 
 ENTRYPOINT [ "bash", "-l", "-c" ]
